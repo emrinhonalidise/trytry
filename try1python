@@ -1,0 +1,87 @@
+import os
+import time
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from flask import Flask, render_template
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+import pandas as pd
+import io
+from selenium.webdriver.common.action_chains import ActionChains
+import time
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import ElementClickInterceptedException, NoSuchElementException
+
+
+#makes a dir for jsons
+current_directory = os.getcwd()
+download_directory = os.path.join(current_directory, 'indirme_klasoru')
+
+options = webdriver.ChromeOptions()
+options.add_experimental_option("prefs", {
+    "download.default_directory": download_directory
+})
+
+# options.add_argument("--headless")
+options.add_argument("--ignore-certificate-errors")
+options.add_argument("--incognito")
+service = Service(ChromeDriverManager().install())
+browser = webdriver.Chrome(service=service, options=options)
+link = "https://acikveri.ysk.gov.tr/anasayfa"
+browser.get(link)  
+browser.implicitly_wait(2)
+
+#choose election
+close_button = browser.find_element(by=By.ID, value="myModalClose")
+secim_secmece= browser.find_element(by=By.CSS_SELECTOR, value='a#navbarDropdown')
+
+
+close_button.click()
+secim_secmece.click()
+#cumhurbaskani election
+a_element = browser.find_element(by=By.CSS_SELECTOR, value="#heading6 > h5 > a")
+a_element.click()
+time.sleep(2)
+#24 haziran 2018 election
+cb_secim = browser.find_elements(by=By.CSS_SELECTOR, value="#collapse6 > div > div")
+ikibinonsekiz = cb_secim[0]
+ikibinonsekiz.click()
+browser.implicitly_wait(2)
+
+#left side election result
+left_bar = browser.find_element(by=By.CSS_SELECTOR, value="#accordionSidebar > li:nth-child(22) > a")
+left_bar.click()
+browser.implicitly_wait(10)
+
+#get all cities in one json 
+button_element = WebDriverWait(browser, 10).until(EC.element_to_be_clickable(browser.find_element(by=By.CSS_SELECTOR, value="#kadinErkekOraniBar > div.card-body > div > button:nth-child(2)")))
+browser.implicitly_wait(5)
+browser.execute_script("arguments[0].click();", button_element)
+
+
+#not working correctly
+#get cities json one by one
+for i in range(1, 182):
+    xpath = "(//*[local-name()='text'])[" + str(i) + "]"
+
+    try:
+        text_element = browser.find_element(By.XPATH, xpath)
+        text_element.click()
+    except (ElementClickInterceptedException, NoSuchElementException):
+        
+        continue
+
+    button_element = WebDriverWait(browser, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#kadinErkekOraniBar > div.card-body > div > button:nth-child(2)")))
+    browser.execute_script("arguments[0].click();", button_element)
+    time.sleep(2)
+
+    buttton_geri = WebDriverWait(browser, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#content > div > div.row > div > div > div.card-header.py-3.justify-content-between.d-flex > button")))
+    time.sleep(2)
+    browser.execute_script("arguments[0].click();", buttton_geri)
+    time.sleep(2)
